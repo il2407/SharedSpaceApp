@@ -96,6 +96,32 @@ const GroupPage = ({ navigation }) => {
     Alert.alert("Group Number", `The group number is ${groupID}`);
   };
 
+  const handleSendInvitation = async () => {
+    try {
+      const response = await axios.post("http://localhost:5000/invite_user", {
+        group_id: groupID,
+        email: email,
+      });
+
+      if (response.status === 200 && response.data.status === "success") {
+        showMessage({
+          message: "Success",
+          description: "Invitation sent successfully",
+          type: "success",
+        });
+      } else {
+        throw new Error("Failed to send invitation.");
+      }
+    } catch (error) {
+      console.log(error);
+      showMessage({
+        message: "Error",
+        description: "Unable to send invitation",
+        type: "danger",
+      });
+    }
+  };
+
   const handleGetGroupDetailsById = async () => {
     try {
       console.log("groupID", groupID);
@@ -185,7 +211,18 @@ const GroupPage = ({ navigation }) => {
       <View style={styles.header}>
         <Text style={styles.title}>Appartement Members</Text>
       </View>
-
+      <TextInput
+        style={[styles.textInput, isFocused && styles.focused]}
+        placeholder="Enter Email to Invite"
+        placeholderTextColor="#999"
+        onChangeText={setEmail}
+        value={email}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
+      />
+      <TouchableOpacity style={styles.button} onPress={handleSendInvitation}>
+        <Text style={styles.buttonText}>Send Invitation</Text>
+      </TouchableOpacity>
       <View style={styles.content}>
         {/* Display the member names in a table */}
         <View style={styles.table}>

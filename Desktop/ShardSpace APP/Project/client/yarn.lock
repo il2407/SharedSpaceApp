@@ -7727,6 +7727,11 @@
   "resolved" "https://registry.npmjs.org/react-native-gradle-plugin/-/react-native-gradle-plugin-0.71.17.tgz"
   "version" "0.71.17"
 
+"react-native-image-picker@^5.6.0":
+  "integrity" "sha512-QHHb0qw3VXDedllrfS6SjxNG1SubnjUjIR2OH1HVbjv/IRVa3v4fI1MHbQaSNXlGopT9kL9jcnh7tbcX1z74Vg=="
+  "resolved" "https://registry.npmjs.org/react-native-image-picker/-/react-native-image-picker-5.6.0.tgz"
+  "version" "5.6.0"
+
 "react-native-iphone-screen-helper@^2.0.2":
   "integrity" "sha512-gbSnV0iYWQ3hne3inYoueatSJL/Un49biIkHLGKsm7J7QjFhL+/WSPB1sZhQ87lNIANwFh33nvxcjixxR4T+NQ=="
   "resolved" "https://registry.npmjs.org/react-native-iphone-screen-helper/-/react-native-iphone-screen-helper-2.0.3.tgz"

@@ -9,6 +9,7 @@ import ChatList from "../Screen/Chat/ChatList";
 import StepIndicatorScreen from "../Screen/Notification/NotificationScreen";
 import OwnerScreen from "../Screen/Profile/OwnerScreen";
 import GroupDetailsPage from "../Screen/Appartements/MyAppartements";
+import OwnerChatList from "../Screen/Chat/OwnerChatList";
 // import Theme from "../../src/Constants/Theme";
 
 const Tab = createBottomTabNavigator();
@@ -37,7 +38,7 @@ function OwnerPage({ route }) {
       />
       <Tab.Screen
         name="Messeage"
-        component={ChatList}
+        component={OwnerChatList}
         options={{
           tabBarLabel: "Chat",
           tabBarIcon: ({ color, size }) => (
@@ -61,7 +62,7 @@ function OwnerPage({ route }) {
         name="Profile"
         component={GroupDetailsPage}
         options={{
-          tabBarLabel: "GroupDetailsPage",
+          tabBarLabel: "My Appartements",
           tabBarIcon: ({ color, size }) => (
             //This is the icon use for Profile in bottom tab
             <FontAwesome5 name="home" color={color} size={size} />

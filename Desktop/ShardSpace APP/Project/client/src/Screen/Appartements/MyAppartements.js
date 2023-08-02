@@ -11,6 +11,8 @@ const GroupDetailsPage = () => {
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [userID, setUserID] = useState(0);
+  const [groupID, setGroupID] = useState("");
+  const [userName, setUserName] = useState("");
 
 
 

@@ -52,10 +52,8 @@ const CreateGroup = ({ navigation }) => {
   //   }
   // };
 
-
-
   const handleCreateNewGroup = async () => {
-    console.log("end" ,dateTermination )
+    console.log("end", dateTermination);
 
     try {
       const data = {
@@ -64,7 +62,7 @@ const CreateGroup = ({ navigation }) => {
         group_name: groupName,
         group_max_members: groupMaxMembers,
         group_description: groupDescription,
-        end_of_contract : dateTermination,
+        end_of_contract: dateTermination,
       };
 
       const response = await axios.post(
@@ -90,12 +88,35 @@ const CreateGroup = ({ navigation }) => {
       });
     }
   };
+  const handleSendInvitation = async () => {
+    try {
+      const response = await axios.post("http://localhost:5000/invite_user", {
+        group_id: groupID,
+        email: email,
+      });
 
-
+      if (response.status === 200 && response.data.status === "success") {
+        showMessage({
+          message: "Success",
+          description: "Invitation sent successfully",
+          type: "success",
+        });
+      } else {
+        throw new Error("Failed to send invitation.");
+      }
+    } catch (error) {
+      console.log(error);
+      showMessage({
+        message: "Error",
+        description: "Unable to send invitation",
+        type: "danger",
+      });
+    }
+  };
 
   const handleGetGroupDetailsById = async () => {
     try {
-      console.log("groupID", groupID)
+      console.log("groupID", groupID);
       const data = { group_id: groupID };
 
       const response = await axios.post(
@@ -125,12 +146,12 @@ const CreateGroup = ({ navigation }) => {
   useEffect(() => {
     const fetchGroupID = async () => {
       const storedGroupID = await AsyncStorage.getItem("groupID");
-      console.log("storedGroupID", storedGroupID)
+      console.log("storedGroupID", storedGroupID);
       setGroupID(storedGroupID);
     };
     const fetchUserID = async () => {
       const storedUserID = await AsyncStorage.getItem("userID");
-      console.log("storedUserID", storedUserID)
+      console.log("storedUserID", storedUserID);
       setUserID(storedUserID);
     };
     const fetchUserName = async () => {
@@ -141,22 +162,17 @@ const CreateGroup = ({ navigation }) => {
     fetchUserID();
     fetchGroupID();
     fetchUserName();
-
   }, []);
-
 
   useEffect(() => {
     handleGetGroupDetailsById();
   }, [groupID]);
 
   return (
-
     <View style={styles.container}>
-    
       <View style={styles.header}>
-      <Text style={styles.title}>You are a house owner</Text>
-
-        <Text style={styles.title}>Create New Group</Text>
+        <Text style={styles.headerText}>You are a house owner</Text>
+        <Text style={styles.subHeaderText}>Create New Group</Text>
       </View>
       <View style={styles.content}>
         <TextInput
@@ -165,12 +181,9 @@ const CreateGroup = ({ navigation }) => {
           onChangeText={setGroupName}
           value={groupName}
         />
-                <Text style={styles.title}>Apartment Max Members</Text>
-
         <TextInput
           style={styles.textInput}
           placeholder="Apartment Max Members"
-          keyboardType="numeric"
           onChangeText={(text) => setGroupMaxMembers(Number(text))}
           value={groupMaxMembers.toString()}
         />
@@ -186,90 +199,93 @@ const CreateGroup = ({ navigation }) => {
           onChangeText={setDateTermination}
           value={dateTermination}
         />
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            marginBottom: 16,
-          }}
-        >
-        
-        </View>
         <TouchableOpacity style={styles.button} onPress={handleCreateNewGroup}>
           <Text style={styles.buttonText}>Create New Group</Text>
         </TouchableOpacity>
-        <TouchableOpacity
-        style={styles.bottomButton}
-        onPress={() => navigation.navigate("OwnerPage")}
-      >
-        <Text style={styles.bottomButtonText}>Home</Text>
-      </TouchableOpacity>
-      <FlashMessage position="top" />
-    </View>
-        </View>
 
+        <TextInput
+          style={styles.textInput}
+          placeholder="Invite Email"
+          onChangeText={setEmail}
+          value={email}
+        />
+        <TextInput
+          style={styles.textInput}
+          placeholder="Group ID for Invitation"
+          onChangeText={setGroupID}
+          value={groupID}
+        />
+        <TouchableOpacity style={styles.button} onPress={handleSendInvitation}>
+          <Text style={styles.buttonText}>Send Invitation</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.bottomButton}
+          onPress={() => navigation.navigate("OwnerPage")}
+        >
+          <Text style={styles.bottomButtonText}>Home</Text>
+        </TouchableOpacity>
+        <FlashMessage position="top" />
+      </View>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#f8f8f8",
   },
   header: {
-    backgroundColor: "#ddd",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    backgroundColor: "#007bff",
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
   },
-  title: {
+  headerText: {
+    fontSize: 22,
+    color: "#fff",
+    fontWeight: "600",
+  },
+  subHeaderText: {
     fontSize: 18,
-    fontWeight: "bold",
+    color: "#fff",
+    fontWeight: "500",
+    marginTop: 10,
   },
   content: {
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-  },
-  button: {
-    backgroundColor: "#007bff",
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  buttonText: {
-    fontSize: 16,
-    color: "#fff",
-  },
-  groupIDContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  groupIDLabel: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginRight: 8,
-  },
-  groupID: {
-    fontSize: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 20,
   },
   textInput: {
     borderWidth: 1,
     borderColor: "#ccc",
-    borderRadius: 8,
-    padding: 8,
-    marginBottom: 16,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 20,
+    fontSize: 16,
+  },
+  button: {
+    backgroundColor: "#007bff",
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  buttonText: {
+    fontSize: 18,
+    color: "#fff",
   },
   bottomButton: {
-    backgroundColor: "#007bff",
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingVertical: 12,
+    backgroundColor: "#5c5c5c",
+    paddingVertical: 14,
+    borderRadius: 12,
     alignItems: "center",
+    marginTop: 20,
   },
   bottomButtonText: {
-    fontSize: 16,
+    fontSize: 18,
     color: "#fff",
   },
 });

@@ -1,3 +1,7 @@
+import eventlet
+eventlet.monkey_patch()
+
+
 import datetime
 import hashlib
 import json
@@ -8,6 +12,11 @@ import server_assistent
 from flask_cors import CORS
 from flask import Flask, render_template, request, jsonify
 from flask_socketio import SocketIO, join_room, leave_room, send, emit
+from flask import send_from_directory
+
+
+from werkzeug.utils import secure_filename
+import os
 
 
 
@@ -16,6 +25,205 @@ cors = CORS(app)
 server_assistent.init_db()
 
 
+
+
+
+
+
+socketio = SocketIO(app, cors_allowed_origins="*")
+
+
+
+UPLOAD_FOLDER = 'uploads'
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+
+
+
+# ... Other imports ...
+
+@app.route('/invite_user', methods=['POST'])
+def invite_user():
+    data = request.json
+    email = data['email']
+    group_id = data['group_id']
+    result = server_assistent.invite_user_to_group(email, group_id)
+    if result:
+        return jsonify({"status": "success", "message": "User invited successfully."}), 200
+    else:
+        return jsonify({"status": "error", "message": "Failed to invite user."}), 400
+
+@app.route('/check_invitations/<email>', methods=['GET'])
+def check_invitations(email):
+    group_ids = server_assistent.check_user_invitation(email)
+    return jsonify(group_ids)
+
+# ... Rest of app.py ...
+
+
+
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+           
+           
+@app.route('/uploads/<filename>', methods=['GET'])
+def uploaded_file(filename):
+    return send_from_directory('uploads', filename)
+
+
+
+@app.route('/upload_photo', methods=['POST'])
+def upload_photo():
+    print("Inside upload_photo function.")
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part'}), 400
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+    if file and allowed_file(file.filename):
+        groupID = request.form.get('groupID')
+        userID = request.form.get('userID')
+        # You should validate these values here (not implemented for simplicity)
+
+        filename = secure_filename(file.filename)
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(filepath)
+        print ("groupID", groupID , "userID" , userID)
+
+        
+        # Save file metadata to SQLite database
+        server_assistent.save_file_metadata(filename, filepath, groupID, userID)
+        
+        return jsonify({'success': True, 'filepath': filepath}), 201
+    return jsonify({'error': 'Invalid file type'}), 400
+
+@app.route('/get_photos/<group_id>', methods=['GET'])
+def get_photos(group_id):
+    photos = server_assistent.fetch_photos_by_group(group_id)
+    if not photos:
+        return jsonify({'error': 'No photos found for this group'}), 404
+    
+    return jsonify({'photos': photos}), 200
+
+
+
+@socketio.on("join")
+def on_join(data):
+    username = data['username']
+    room = data['room']
+    join_room(room)
+    send(username + ' has entered the room.', room=room)
+
+@socketio.on("leave")
+def on_leave(data):
+    username = data['username']
+    room = data['room']
+    leave_room(room)
+    send(username + ' has left the room.', room=room)
+
+@socketio.on("message")
+def handle_message(data):
+    room = data['room']
+    user_id = data['user_id']
+    message_text = data['message']
+    timestamp = datetime.datetime.now()
+    # Save message to database
+    server_assistent.query_db(
+        "INSERT INTO chat_messages (room_id, user_id, message_text, timestamp) VALUES (?, ?, ?, ?)",
+        (room, user_id, message_text, timestamp)
+    )
+    # Emit the message to the room
+    emit("new_message", {
+        "user_id": user_id,
+        "message": message_text,
+        "timestamp": str(timestamp)
+    }, room=room)
+
+
+@socketio.on("get_chat_history")
+def handle_chat_history(data):
+    try:
+        room = data['room']
+        print("asdassssssssssssssssssssssssss")
+
+        # Fetch messages for the room from the database
+        messages = server_assistent.query_db(
+            "SELECT user_id, message_text FROM chat_messages WHERE room_id = ?", 
+            (room)
+        )
+
+        # Check if messages were fetched
+        if not messages:
+            print(f"No messages found for room: {room}")
+            emit("error", {"message": f"No messages found for room: {room}"}, room=room)
+            return
+
+        stringified_messages = [{"username": (msg[0]), "message": (msg[1])} for msg in messages]
+        print(f"Messages for room {room}: {stringified_messages}")
+
+        # Send the messages to the requesting client
+        emit("chat_history", stringified_messages, room=room)
+
+    except KeyError:
+        print("Error: 'room' key not found in data.")
+        emit("error", {"message": "Data format error."})
+    except Exception as e:
+        print(f"Error fetching chat history: {e}")
+        emit("error", {"message": "Failed to fetch chat history."})
+
+
+
+
+
+
+# ... existing imports and setup ...
+
+@socketio.on("get_rooms")
+def handle_get_rooms():
+    rooms = server_assistent.get_all_rooms()
+    emit("room_list", rooms)
+
+
+@socketio.on("add_room")
+def handle_add_room(data):
+    room_name = data["room_name"]
+    group_id = data["group_id"]   # Use .get() to ensure the code doesn't break if the field isn't provided
+    user1 = data["user1"]
+    user2 = data["user2"]
+
+    success = server_assistent.add_room(room_name, group_id, user1, user2)   # Assuming the function now accepts these args
+    if success:
+     emit("room_added", {"message": "Room added successfully!", "room_name": room_name})
+    else:
+     emit("error", {"error": "Room already exists!"})
+     
+        
+
+
+@socketio.on("delete_room")
+def handle_delete_room(data):
+    room_name = data["room_name"]
+    server_assistent.delete_room(room_name)
+    emit("room_deleted", {"message": "Room deleted successfully!", "room_name": room_name})
+
+@socketio.on("message")
+def handle_message(data):
+    room = data['room']
+    user_id = data['user_id']
+    message_text = data['message']
+    timestamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    server_assistent.insert_message(room, user_id, message_text, timestamp)
+    emit("new_message", {
+        "user_id": user_id,
+        "message": message_text,
+        "timestamp": timestamp
+    }, room=room)
+
+# ... rest of your app.py ...
 
 
 
@@ -48,19 +256,18 @@ def get_group_details_by_id():
 
         if group_success and group_row:
             group_column_names = [
-                "group_id", "group_name", "group_max_members", "group_details", "end_of_contract"  # Add other columns as needed
+                "group_id",
+                "group_name",
+                "group_max_members",
+                "group_details",
+                "end_of_contract",  # Add other columns as needed
             ]
-            group_details.append(
-                dict(zip(group_column_names, group_row[0]))
-            )
+            group_details.append(dict(zip(group_column_names, group_row[0])))
         else:
             # Handle the case when the group_id is not found in the groups table
             group_details.append({"group_id": group_id, "error": "Group not found."})
 
     return jsonify(group_details)
-
-
-
 
 
 @app.route("/register", methods=["POST"])
@@ -185,8 +392,6 @@ def delete_call():
 
 @app.route("/add_group", methods=["POST"])
 def add_group():
-
-
     data = request.get_json()
 
     user_id = data["userID"]
@@ -211,12 +416,13 @@ def add_group():
     _, success = server_assistent.query_db(
         "INSERT INTO group_members (group_id, user_id, is_landlord, user_join_to_group,is_finish) "
         "VALUES (?,?,?,?,?)",
-        (group_id, user_id, is_landlord, created_date,False),
+        (group_id, user_id, is_landlord, created_date, False),
     )
     if success:
         return jsonify({"status": "success", "group_id": group_id}), 200
     else:
         return jsonify({"status": "fail"}), 500
+
 
 @app.route("/toggle_finish", methods=["POST"])
 def toggle_finish():
@@ -227,9 +433,12 @@ def toggle_finish():
     user_in_group, success = server_assistent.query_db(
         "SELECT * FROM group_members WHERE user_id=?", (user_id,), one=True
     )
-    print("user_in_group" ,user_in_group)
+    print("user_in_group", user_in_group)
     if not success or not user_in_group:
-        return jsonify({"status": "fail", "message": "User not found in group_members"}), 404
+        return (
+            jsonify({"status": "fail", "message": "User not found in group_members"}),
+            404,
+        )
 
     # Get the current value of 'is_finish' (assume it's the fourth column)
     is_finish = not user_in_group[6]
@@ -244,7 +453,6 @@ def toggle_finish():
         return jsonify({"status": "success", "is_finish": is_finish}), 200
     else:
         return jsonify({"status": "fail", "message": "Failed to update is_finish"}), 500
-
 
 
 @app.route("/id_from_email", methods=["POST"])
@@ -601,12 +809,19 @@ def members_from_group_id():
     table_data, success = server_assistent.query_db("PRAGMA table_info(users)")
     column_names = [info[1] for info in table_data]
     rows, success = server_assistent.query_db(
-        "SELECT DISTINCT users.* FROM users JOIN group_members ON users.id = group_members.user_id AND group_members.group_id=?", (group_id,))
+        "SELECT DISTINCT users.* FROM users JOIN group_members ON users.id = group_members.user_id AND group_members.group_id=?",
+        (group_id,),
+    )
     rows_as_dicts = [dict(zip(column_names, row)) for row in rows]
-    rows_as_dicts = [{key: value.decode("utf-8") if isinstance(value, bytes) else value} for row in rows_as_dicts for key, value in row.items()]
+    rows_as_dicts = [
+        {key: value.decode("utf-8") if isinstance(value, bytes) else value}
+        for row in rows_as_dicts
+        for key, value in row.items()
+    ]
 
     json_data = json.dumps(rows_as_dicts)
     return json_data, 200
+
 
 @app.route("/get_user_groups", methods=["POST"])
 def get_user_groups():
@@ -616,12 +831,19 @@ def get_user_groups():
     table_data, success = server_assistent.query_db("PRAGMA table_info(groups)")
     column_names = [info[1] for info in table_data]
     rows, success = server_assistent.query_db(
-        "SELECT DISTINCT groups.* FROM groups JOIN group_members ON groups.group_id = group_members.group_id AND group_members.user_id=?", (user_id,))
+        "SELECT DISTINCT groups.* FROM groups JOIN group_members ON groups.group_id = group_members.group_id AND group_members.user_id=?",
+        (user_id,),
+    )
     rows_as_dicts = [dict(zip(column_names, row)) for row in rows]
-    rows_as_dicts = [{key: value.decode("utf-8") if isinstance(value, bytes) else value} for row in rows_as_dicts for key, value in row.items()]
+    rows_as_dicts = [
+        {key: value.decode("utf-8") if isinstance(value, bytes) else value}
+        for row in rows_as_dicts
+        for key, value in row.items()
+    ]
 
     json_data = json.dumps(rows_as_dicts)
     return json_data, 200
+
 
 @app.route("/remove_user_from_group_by_id", methods=["POST"])
 def remove_user_from_group():
@@ -652,16 +874,26 @@ def get_user_details_by_id():
         "SELECT * FROM users WHERE id=?", (user_id,)
     )
     rows_as_dicts = [dict(zip(column_names, row)) for row in rows]
-    rows_as_dicts = [{key: value.decode("utf-8") if isinstance(value, bytes) else value} for row in rows_as_dicts for key, value in row.items()]
+    rows_as_dicts = [
+        {key: value.decode("utf-8") if isinstance(value, bytes) else value}
+        for row in rows_as_dicts
+        for key, value in row.items()
+    ]
 
     json_data = json.dumps(rows_as_dicts)
     return json_data, 200
+
 
 def is_available_group(group_id):
     delete_users_finished_contract()
     curr_members = get_curr_num_group_members(group_id)
     max_members = get_max_members(group_id)
-    return curr_members is not None and max_members is not None and curr_members < max_members
+    return (
+        curr_members is not None
+        and max_members is not None
+        and curr_members < max_members
+    )
+
 
 # def delete_users_finished_contract():
 #     curr_date = datetime.datetime.now()
@@ -700,6 +932,7 @@ def is_available_group(group_id):
 #     json_data = json.dumps(rows_as_dicts)
 #     return json_data, 200
 
+
 @app.route("/get_available_groups", methods=["POST"])
 def get_finished_groups_details():
     # Find all the members whose 'is_finish' field value is 1
@@ -726,24 +959,30 @@ def get_finished_groups_details():
             )
 
             # Append the relevant details to the list
-            group_details.append({
-                "group_id": group_id,
-                "group_name": group_detail[1],
-                "group_max_members": group_detail[2],
-                "group_description": group_detail[3],
-                "end_of_contract": group_detail[4],
-                "user_id": user_id,
-                "username": username,
-            })
+            group_details.append(
+                {
+                    "group_id": group_id,
+                    "group_name": group_detail[1],
+                    "group_max_members": group_detail[2],
+                    "group_description": group_detail[3],
+                    "end_of_contract": group_detail[4],
+                    "user_id": user_id,
+                    "username": username,
+                }
+            )
 
     if group_details:
         return jsonify({"status": "success", "group_details": group_details}), 200
     else:
         return (
-            jsonify({"status": "fail", "message": "No group details found for finished members"}),
+            jsonify(
+                {
+                    "status": "fail",
+                    "message": "No group details found for finished members",
+                }
+            ),
             404,
         )
-
 
 
 @app.route("/add_user_to_group", methods=["POST"])
@@ -759,15 +998,20 @@ def add_user_to_group():
     _, success = server_assistent.query_db(
         "INSERT INTO group_members (group_id, user_id, is_landlord, user_join_to_group, date_intended_contract_termination, is_finish) "
         "VALUES (?,?,?,?,?,?)",
-        (group_id, user_id, is_landlord, created_date, date_intended_contract_termination,is_finish),
+        (
+            group_id,
+            user_id,
+            is_landlord,
+            created_date,
+            date_intended_contract_termination,
+            is_finish,
+        ),
     )
 
     if success:
         return jsonify({"status": "success", "group_id": group_id}), 200
     else:
         return jsonify({"status": "fail"}), 500
-
-
 
 
 @app.route("/add_event", methods=["POST"])
@@ -835,5 +1079,8 @@ def remove_event():
         return jsonify({"status": "fail", "message": "Failed to connect to DB"}), 500
 
 
+# if __name__ == "__main__":
+#     app.run(host="0.0.0.0", port=5000, debug=True)
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    socketio.run(app, host="0.0.0.0", port=5000, debug=True, use_reloader=False)
+

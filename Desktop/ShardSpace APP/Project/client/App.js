@@ -10,11 +10,7 @@ const App = () => {
 
   return (
     <NavigationContainer>
-
-    
- 
           <AuthStack />
-     
     </NavigationContainer>
 
   );

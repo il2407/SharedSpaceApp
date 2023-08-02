@@ -14,6 +14,9 @@ import { user_login } from "../../api/user_api";
 import { UserContext } from "../../api/UserContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
+import CustomTextInput from "../../Component/TextInputComponent";
+
+import { COLORS, API_URLS } from "../../constants";
 
 export default function Login({ navigation }) {
   const [email, setEmail] = useState("");
@@ -118,7 +121,6 @@ export default function Login({ navigation }) {
       console.log("ASdasdasd", response.data);
       setUserName(response.data[1].username);
       setRole(response.data[10].role);
-      
     } catch (error) {
       console.log(error);
       // Alert.alert("Error", "Unable to get group details");
@@ -134,7 +136,6 @@ export default function Login({ navigation }) {
       handleGetGroupIdDetails();
     }
   }, [userID]);
-
 
   useEffect(() => {
     if (groupID !== "") {
@@ -154,133 +155,87 @@ export default function Login({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
-      <UserContext.Provider value={{ email }}>
-        <View style={{ justifyContent: "center", alignItems: "center" }}>
-          <View style={{ width: 120, height: 220 }}>
-            <Image
-              source={require("../../../assets/icon.png")}
-              style={{ width: "100%", height: "100%" }}
-              resizeMode={"cover"}
-            />
-          </View>
-        </View>
-        {errorMessage ? (
-          <Text style={styles.errorMessage}>{errorMessage}</Text>
-        ) : null}
-        <View>
-          <TextInput 
-            value={email}
-            onChangeText={(text) => setEmail(text)}
-            placeholder="Enter your email"
-            keyboardType="email-address" 
-            style={styles.inputField}
-          />
-          {checkValidEmail ? (
-            <Text style={styles.textFailed}>Wrong format email</Text>
-          ) : (
-            <Text style={styles.textFailed}> </Text>
-          )}
-          <PasswordComponent
-            placeholder={"Enter your password"}
-            icon="key"
-            label="Password"
-            value={password}
-            onChangeText={(text) => setPassword(text)}
-          />
-        </View>
-        <View style={{ marginHorizontal: 20 }}>
-          <Button
-            title="Sign In"
-            onPress={handleLogin}
-            color="#4CAF50" // hardcoded color for green
-          />
-          <TouchableOpacity onPress={() => navigation.navigate("SignUp")}>
-            <Text
-              style={{
-                marginLeft: 5,
-                color: "#FF5733", // hardcoded color for primary
-                fontWeight: "bold",
-                fontSize: 16,
-                textDecorationLine: "underline",
-              }}
-            >
-              Create an account
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </UserContext.Provider>
+      <View style={styles.logoContainer}>
+        <Image
+          source={require("../../../assets/icon.png")}
+          style={styles.logo}
+          resizeMode="cover"
+        />
+      </View>
+      {errorMessage && <Text style={styles.errorMessage}>{errorMessage}</Text>}
+      <View>
+        <CustomTextInput
+          value={email}
+          onChangeText={(text) => setEmail(text)}
+          label="Email"
+          icon="email"
+          keyboardType="email-address"
+        />
+        {checkValidEmail && (
+          <Text style={styles.errorText}>Wrong format email</Text>
+        )}
+        <PasswordComponent
+          placeholder="Enter your password"
+          icon="key"
+          label="Password"
+          value={password}
+          onChangeText={setPassword}
+        />
+      </View>
+      <View style={styles.actionContainer}>
+        <Button
+          title="Sign In"
+          onPress={handleLogin}
+          color={COLORS.PRIMARY_GREEN}
+        />
+        <TouchableOpacity onPress={() => navigation.navigate("SignUp")}>
+          <Text style={styles.createAccountText}>Create an account</Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#ffffff",
+    backgroundColor: COLORS.WHITE,
     justifyContent: "center",
   },
-  sginInDesign: {
-    color: "#7B7BC4",
-    fontSize: 20,
-    fontWeight: "bold",
+  logoContainer: {
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  logo: {
+    width: 120,
+    height: 220,
+  },
+  errorMessage: {
+    color: COLORS.ERROR_RED,
+    textAlign: "center",
     marginBottom: 15,
   },
-  forgetPassword: {
-    color: "#7B7BC4",
-    marginVertical: 5,
-    fontSize: 14,
-  },
-  wrapperInput: {
-    borderWidth: 0.5,
-    borderRadius: 5,
-    borderColor: "grey",
-    marginTop: 10,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  input: {
-    padding: 10,
-    width: "100%",
-  },
-  wrapperIcon: {
-    position: "absolute",
-    right: 0,
-    padding: 10,
-  },
-  icon: {
-    width: 30,
-    height: 24,
-  },
-  button: {
-    padding: 10,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "orange",
-    borderRadius: 5,
-    marginTop: 25,
-  },
-  buttonDisable: {
-    padding: 10,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "grey",
-    borderRadius: 5,
-    marginTop: 25,
-  },
-  text: {
-    color: "white",
-    fontWeight: "700",
-  },
-  textFailed: {
+  errorText: {
+    color: COLORS.ERROR_RED,
     alignSelf: "flex-end",
-    color: "red",
   },
   inputField: {
     height: 40,
-    borderColor: 'gray',
+    borderColor: COLORS.GRAY,
     borderWidth: 1,
     paddingLeft: 10,
     marginVertical: 5,
     borderRadius: 5,
+  },
+  actionContainer: {
+    marginHorizontal: 20,
+    marginTop: 20,
+  },
+  createAccountText: {
+    marginLeft: 5,
+    color: COLORS.PRIMARY_GREEN,
+    fontWeight: "bold",
+    fontSize: 16,
+    textDecorationLine: "underline",
   },
 });

@@ -17,6 +17,11 @@ import CreateGroup from "../Screen/Profile/Functions/CreateGroup";
 import ChatList from "../Screen/Chat/ChatList";
 import AdminRequestPage from "../Screen/Profile/Functions/AdminRequestPage";
 import GroupDetailsPage from "../Screen/Appartements/MyAppartements";
+import ChatRoom from "../Screen/Chat/ChatRoom";
+import OwnerChatList from "../Screen/Chat/OwnerChatList";
+import ManagerDocument from "../Screen/Profile/Functions/ManagerDocument";
+import OwnerUploadDocumentPage from "../Screen/Profile/Functions/OwnerUploadDocumentPage";
+import UserInvitationPage from "../Screen/Profile/Functions/UserInvitationPage";
 
 const Stack = createNativeStackNavigator();
 function AuthStack() {
@@ -69,6 +74,11 @@ function AuthStack() {
         options={{ headerShown: false }}
       />
       <Stack.Screen
+        name="OwnerUploadDocumentPage"
+        component={OwnerUploadDocumentPage}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
         name="UploadDocumentPage"
         component={UploadDocumentPage}
         options={{ headerShown: false }}
@@ -95,8 +105,28 @@ function AuthStack() {
         options={{ headerShown: false }}
       />
       <Stack.Screen
+        name="OwnerChatList"
+        component={OwnerChatList}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="ChatRoom"
+        component={ChatRoom}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="ManagerDocument"
+        component={ManagerDocument}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
         name="GroupDetailsPage"
         component={GroupDetailsPage}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="UserInvitationPage"
+        component={UserInvitationPage}
         options={{ headerShown: false }}
       />
     </Stack.Navigator>

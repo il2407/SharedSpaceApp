@@ -150,7 +150,6 @@ export default function UserScreen({ navigation }) {
             marginHorizontal: 20,
           }}
         >
-          <View style={{ flex: 1 }}></View>
           <TouchableOpacity
             style={[styles.box, { backgroundColor: "#B4C7E7" }]}
             onPress={() => {
@@ -159,7 +158,17 @@ export default function UserScreen({ navigation }) {
           >
             <Text style={styles.textBox}>Join Group</Text>
           </TouchableOpacity>
+          <View style={{ flex: 1 }}></View>
+          <TouchableOpacity
+            style={[styles.box, { backgroundColor: "#B4C7E7" }]}
+            onPress={() => {
+              handleNavigate("UserInvitationPage");
+            }}
+          >
+            <Text style={styles.textBox}>Invitations</Text>
+          </TouchableOpacity>
         </View>
+
         <br></br>
         <br></br>
         <br></br>

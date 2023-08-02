@@ -9,11 +9,13 @@ import {
 } from "react-native";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
+import { useNavigation } from "@react-navigation/native";
 
 const AdminRequestPage = () => {
   const [faults, setFaults] = useState([]);
   const [groupID, setGroupID] = useState(0);
+
+  const navigation = useNavigation();
 
   const loadFaults = async () => {
     const data = JSON.stringify({
@@ -34,20 +36,25 @@ const AdminRequestPage = () => {
   };
   const handleDelete = async (faultId) => {
     try {
-        const response = await axios.post(`http://localhost:5000/delete_call`, { fault_id: faultId });
+      const response = await axios.post(`http://localhost:5000/delete_call`, {
+        fault_id: faultId,
+      });
 
-        if (response.data.status === "success") {
-            Alert.alert("Success", "Request deleted successfully!");
-            loadFaults();
-        } else {
-            Alert.alert("Error", response.data.message || "Failed to delete the request.");
-        }
+      if (response.data.status === "success") {
+        Alert.alert("Success", "Request deleted successfully!");
+        loadFaults();
+      } else {
+        Alert.alert(
+          "Error",
+          response.data.message || "Failed to delete the request."
+        );
+      }
     } catch (error) {
-        Alert.alert("Error", "Failed to connect to the server.");
+      Alert.alert("Error", "Failed to connect to the server.");
     }
-};
+  };
 
-useEffect(() => {
+  useEffect(() => {
     const fetchGroupID = async () => {
       const storedGroupID = await AsyncStorage.getItem("groupID");
       setGroupID(storedGroupID);
@@ -63,6 +70,12 @@ useEffect(() => {
 
   const FaultItem = ({ item }) => (
     <View style={styles.taskItem}>
+      <View style={styles.header}>
+        <Text style={styles.headerText}>
+          Applications opened by roommates to you
+        </Text>
+      </View>
+
       <View>
         <Text style={styles.taskName}>Name: {item.fault_name}</Text>
         <Text style={styles.taskDescription}>
@@ -83,7 +96,9 @@ useEffect(() => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerText}>Applications opened by roomates to you </Text>
+        <Text style={styles.headerText}>
+          Applications opened by roomates to you{" "}
+        </Text>
       </View>{" "}
       <View style={styles.faultsContainer}>
         <Text style={styles.faultsHeaderText}>Applications:</Text>
@@ -98,92 +113,98 @@ useEffect(() => {
           )}
         />
       </View>
+      <TouchableOpacity
+        style={styles.submitButton}
+        onPress={() => navigation.navigate("OwnerPage")}
+      >
+        <Text style={styles.submitButtonText}>Home</Text>
+      </TouchableOpacity>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: "#fff",
-      },
-      header: {
-        backgroundColor: "#62B1F6",
-        paddingVertical: 20,
-        paddingHorizontal: 10,
-        marginBottom: 20,
-      },
-      headerText: {
-        fontSize: 20,
-        fontWeight: "bold",
-        color: "#fff",
-        textAlign: "center",
-      },
-      inputContainer: {
-        paddingHorizontal: 10,
-        marginBottom: 20,
-      },
-      input: {
-        borderWidth: 1,
-        borderColor: "#ccc",
-        padding: 10,
-        marginBottom: 10,
-        borderRadius: 5,
-      },
-      fileButton: {
-        backgroundColor: "#62B1F6",
-        padding: 10,
-        borderRadius: 5,
-        marginBottom: 10,
-      },
-      fileButtonText: {
-        color: "#fff",
-        fontWeight: "bold",
-        textAlign: "center",
-      },
-      submitButton: {
-        backgroundColor: "#62B1F6",
-        padding: 10,
-        borderRadius: 5,
-      },
-      submitButtonText: {
-        color: "#fff",
-        fontWeight: "bold",
-        textAlign: "center",
-      },
-      faultsContainer: {
-        flex: 1,
-        paddingHorizontal: 10,
-      },
-      faultsHeaderText: {
-        fontSize: 18,
-        fontWeight: "bold",
-        marginBottom: 10,
-      },
-      taskItem: {
-        backgroundColor: "#eee",
-        padding: 10,
-        borderRadius: 5,
-        marginBottom: 10,
-      },
-      taskName: {
-        fontWeight: "bold",
-        marginBottom: 5,
-      },
-      taskDescription: {
-        marginBottom: 5,
-      },
-      emptyTasksContainer: {
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        height: 100,
-      },
-      emptyTasksText: {
-        color: "#999",
-        fontStyle: "italic",
-      },
-        deleteButton: {
+  container: {
+    flex: 1,
+    backgroundColor: "#fff",
+  },
+  header: {
+    backgroundColor: "#62B1F6",
+    paddingVertical: 20,
+    paddingHorizontal: 10,
+    marginBottom: 20,
+  },
+  headerText: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#fff",
+    textAlign: "center",
+  },
+  inputContainer: {
+    paddingHorizontal: 10,
+    marginBottom: 20,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    padding: 10,
+    marginBottom: 10,
+    borderRadius: 5,
+  },
+  fileButton: {
+    backgroundColor: "#62B1F6",
+    padding: 10,
+    borderRadius: 5,
+    marginBottom: 10,
+  },
+  fileButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  submitButton: {
+    backgroundColor: "#62B1F6",
+    padding: 10,
+    borderRadius: 5,
+  },
+  submitButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  faultsContainer: {
+    flex: 1,
+    paddingHorizontal: 10,
+  },
+  faultsHeaderText: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+  taskItem: {
+    backgroundColor: "#eee",
+    padding: 10,
+    borderRadius: 5,
+    marginBottom: 10,
+  },
+  taskName: {
+    fontWeight: "bold",
+    marginBottom: 5,
+  },
+  taskDescription: {
+    marginBottom: 5,
+  },
+  emptyTasksContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    height: 100,
+  },
+  emptyTasksText: {
+    color: "#999",
+    fontStyle: "italic",
+  },
+  deleteButton: {
     backgroundColor: "red",
     padding: 10,
     borderRadius: 5,
@@ -193,6 +214,17 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "bold",
     textAlign: "center",
+  },
+  backButton: {
+    position: "absolute",
+    left: 10,
+    top: 10,
+    padding: 10,
+    backgroundColor: "#f0f0f0",
+    borderRadius: 5,
+  },
+  backButtonText: {
+    color: "#333",
   },
 });
 

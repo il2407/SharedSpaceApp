@@ -11,18 +11,16 @@ import { useNavigation } from "@react-navigation/native";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const JsonList = ({ data }) => {
-  return (
-    <View style={styles.table}>
-      {Object.entries(data).map(([key, value]) => (
-        <View key={key} style={styles.row}>
-          <Text style={styles.cell}>{key}</Text>
-          <Text style={styles.cell}>{JSON.stringify(value)}</Text>
-        </View>
-      ))}
-    </View>
-  );
-};
+const JsonList = ({ data }) => (
+  <View style={styles.table}>
+    {Object.entries(data).map(([key, value]) => (
+      <View key={key} style={styles.row}>
+        <Text style={styles.cell}>{key}</Text>
+        <Text style={styles.cell}>{JSON.stringify(value)}</Text>
+      </View>
+    ))}
+  </View>
+);
 
 const SplitPayments = () => {
   const navigation = useNavigation();
@@ -183,11 +181,13 @@ const SplitPayments = () => {
     <View style={styles.container}>
       <Text style={styles.title}>Split Payments</Text>
       <View style={styles.form}>
+        {/* Expense Input */}
         <TextInput
           style={styles.input}
           placeholder="Expense name"
           onChangeText={(text) => setNewExpense({ ...newExpense, name: text })}
         />
+        {/* Amount Input */}
         <TextInput
           style={styles.input}
           placeholder="Expense amount"
@@ -196,14 +196,13 @@ const SplitPayments = () => {
             setNewExpense({ ...newExpense, amount: Number(text) })
           }
         />
-        <View style={styles.table}>
-          <View style={styles.row}>
-            <Text style={styles.cellHeader}>Name </Text>
-            <Text style={styles.cellHeader}> </Text>
-            <Text style={styles.cellHeader}>Amount </Text>
-            <Text style={styles.cellHeader}> </Text>
 
-            <Text style={styles.cellHeader}>User</Text>
+        {/* Expenses Table */}
+        <View style={styles.table}>
+          <View style={styles.headerRow}>
+            <Text style={styles.headerCell}>Name</Text>
+            <Text style={styles.headerCell}>Amount</Text>
+            <Text style={styles.headerCell}>User</Text>
           </View>
           {expenses.map((expense, index) => (
             <View key={index} style={styles.row}>
@@ -213,13 +212,18 @@ const SplitPayments = () => {
             </View>
           ))}
         </View>
+
+        {/* Add Expense Button */}
         <TouchableOpacity style={styles.button} onPress={addExpense}>
           <Text style={styles.buttonText}>Add Expense</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Debts List */}
       <View style={styles.tableContainer}>
         <JsonList data={debts} />
       </View>
+
       <Button title="Calculate Debts" onPress={calculateDebts} />
       <Button title="Go Back" onPress={() => navigation.goBack()} />
     </View>
@@ -230,29 +234,32 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: "#fff",
+    backgroundColor: "#f8f8f8",
     alignItems: "center",
-    justifyContent: "center",
   },
   title: {
     fontSize: 24,
     fontWeight: "bold",
     marginBottom: 20,
+    color: "#333",
   },
   form: {
     marginBottom: 20,
+    width: "100%",
   },
   input: {
     height: 40,
-    borderColor: "gray",
+    borderColor: "#ccc",
     borderWidth: 1,
     marginBottom: 10,
     paddingHorizontal: 10,
+    borderRadius: 4,
   },
   button: {
-    backgroundColor: "blue",
+    backgroundColor: "#007AFF",
     padding: 10,
     borderRadius: 5,
+    marginTop: 10,
   },
   buttonText: {
     color: "#fff",
@@ -261,11 +268,23 @@ const styles = StyleSheet.create({
   },
   tableContainer: {
     marginBottom: 20,
+    width: "100%",
   },
   table: {
     borderWidth: 1,
     borderColor: "#ccc",
     marginBottom: 10,
+  },
+  headerRow: {
+    flexDirection: "row",
+    backgroundColor: "#f0f0f0",
+    paddingVertical: 5,
+  },
+  headerCell: {
+    flex: 1,
+    padding: 5,
+    fontWeight: "600",
+    textAlign: "center",
   },
   row: {
     flexDirection: "row",
@@ -276,6 +295,7 @@ const styles = StyleSheet.create({
   cell: {
     flex: 1,
     padding: 5,
+    textAlign: "center",
   },
 });
 
